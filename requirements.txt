@@ -1,3 +1,0 @@
-PySimpleGUI~=4.60.4
-mysql-connector-python~=8.0.31
-setuptools~=63.1.0
