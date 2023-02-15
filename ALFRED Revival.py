@@ -4,6 +4,7 @@ import mysql.connector
 from mysql.connector import Error
 import csv
 import json
+import pyperclip
 
 with open("default_settings.json", "r") as file_def:
     default_dict = json.load(file_def)
@@ -47,30 +48,38 @@ def open_about():
             break
 
 
-def open_window(table_data, table_headings, sample_size):
+def open_window(table_data, table_headings):
     layout_w2 = [[sg.Text('Generated Frequency Table')],
                  [sg.Table(table_data, table_headings, expand_x=True, expand_y=True, alternating_row_color='white',
-                           auto_size_columns=True)],
-                 [sg.Text("Sample Size Per Sample Present Above")],
-                 [sg.Listbox(sample_size, select_mode='LISTBOX_SELECT_MODE_BROWSE', key='-SampleSize-',
-                             expand_y=True, expand_x=True)],
+                           auto_size_columns=True,enable_events=True, right_click_selects=True, k='-TableSelect-')],
                  [sg.Button('Export Table', key='-ExportTable-'),
                   sg.Button('Exit', key='-TableExit-')]]
     window_w2 = sg.Window("Frequency Table", layout_w2, resizable=True, icon=png)
     while True:
         event_w2, values_w2 = window_w2.read()
-        if event_w2 == '-TableExit-' or event_w2 == sg.WIN_CLOSED:
-            break
         if event_w2 == '-ExportTable-':
             file_path = sg.popup_get_file('Please save your table!', 'Saving Frequency Table as CSV', save_as=True,
                                           file_types=(('.csv',),), default_extension='.csv',
                                           default_path='~/Documents/')
-            with open(file_path, "w", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow(table_headings)
-                writer.writerows(table_data)
+            try:
+                with open(file_path, "w", newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(table_headings)
+                    writer.writerows(table_data)
+            except TypeError:
+                failure = 1
+        if event_w2 == '-TableSelect-':
+            row_values = window_w2['-TableSelect-'].get()
+            print(row_values)
+            row_values = row_values[0]
+            row_values = [str(x) for x in row_values]
+            row_string = ", ".join(row_values)
+            pyperclip.copy(row_string)
 
-        window_w2.close()
+        if event_w2 == '-TableExit-' or event_w2 == sg.WIN_CLOSED:
+            break
+
+    window_w2.close()
 
 
 def fetch_results(which_pop):
@@ -116,7 +125,8 @@ search_pop_from_snp_frame = [[sg.Text('Type the name of a locus to see what popu
                              [sg.Input(key='-SNPTypeField-'), sg.Button(button_text='Find Populations',
                                                                         key='-PopSearchButton-')],
                              [sg.Listbox(["Populations will be found here!"], select_mode='LISTBOX_SELECT_MODE_BROWSE',
-                                         key='-PopSNPOutput-', visible=False, expand_y=True, expand_x=True)]]
+                                         key='-PopSNPOutput-', visible=False, expand_y=True, expand_x=True,
+                                         enable_events=True)]]
 
 comparison_frame = [[sg.Text('Choose Two Regions')],
                     [sg.Combo(['Connect to Database for Options!'], key='-Reg1Choice-', enable_events=True),
@@ -126,7 +136,7 @@ comparison_frame = [[sg.Text('Choose Two Regions')],
                      sg.Combo(['Connect to Database for Options!'], key='-Pop2Choice-', enable_events=True)],
                     [sg.Table(values=[['SNP', 'Locus']], headings=['SNP Name', 'Locus Name'], expand_y=True,
                               expand_x=True, key='-SNPCommonOutput-', alternating_row_color='white',
-                              auto_size_columns=True)],
+                              auto_size_columns=True, enable_click_events=True)],
                     [sg.Button('Fetch Results', key='-FetchResults-')]]
 
 settings_frame = [[sg.Text('Database IP:'), sg.Input(default_text=None, key='-IPInput-')],
@@ -174,6 +184,10 @@ while True:
         except NameError as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
+    if event == '-PopSNPOutput-':
+        selected_pop_str = window['-PopSNPOutput-'].get()
+        selected_pop_str = str(selected_pop_str[0])
+        pyperclip.copy(selected_pop_str)
     if event == '-DataConnect-':
         try:
             alfred_db = mysql.connector.connect(
@@ -281,6 +295,8 @@ while True:
             dup_list_pop = [*set(list_pop)]
             dup_list_pop.sort()
             sort_pop = dup_list_pop
+            sort_pop = extract_first(sort_pop)
+            print(sort_pop)
             window['-PopSelect-'].update(values=sort_pop)
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
@@ -300,6 +316,7 @@ while True:
             dup_list_pop_c = [*set(list_pop_c)]
             dup_list_pop_c.sort()
             sort_pop_c = dup_list_pop_c
+            sort_pop_c = extract_first(sort_pop_c)
             window['-Pop1Choice-'].update(values=sort_pop_c)
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
@@ -319,6 +336,7 @@ while True:
             dup_list_pop_d = [*set(list_pop_d)]
             dup_list_pop_d.sort()
             sort_pop_d = dup_list_pop_d
+            sort_pop_d = extract_first(sort_pop_d)
             window['-Pop2Choice-'].update(values=sort_pop_d)
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
@@ -376,7 +394,10 @@ while True:
             locus_names = my_cursor.fetchall()
             locus_names.sort()
             sorted_locus = locus_names
+            sorted_locus = extract_first(sorted_locus)
             window['-LocusSelect-'].update(values=sorted_locus)
+            if len(sorted_locus) == 1:
+                window['-LocusSelect-'].update(value=sorted_locus[0])
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
@@ -402,7 +423,9 @@ while True:
         except NameError as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-
+    if '+CLICKED+' in event:
+        selected_value = locuses_and_sites[event[2][0]][event[2][1]]
+        pyperclip.copy(selected_value)
     if event == '-RequestTable-':
         try:
             snp_uid_from_locus = 'SELECT SNP_id FROM snptable WHERE site_name = %s AND locus_name = %s'
@@ -433,13 +456,28 @@ while True:
 
             my_cursor.execute(create_table_sql, args_table_list)
             table_column_names = my_cursor.column_names
+            table_column_names = list(table_column_names)
+            table_column_names.append("Sample Size")
+            table_column_names.remove("SNPCol")
+            table_column_names = tuple(table_column_names)
             table_row_list = my_cursor.fetchall()
+            table_row_list = list(table_row_list)
+            for vals in range(len(table_row_list)):
+                row_list = table_row_list[vals]
+                row_list = list(row_list)
+                row_list.remove(row_list[1])
+                table_row_list[vals] = row_list
             samp_list = extract_first(table_row_list)
+            samp_list = list(samp_list)
             if samp_list != []:
                 samp_size_sql = f'SELECT sample_size FROM samplegrouptable WHERE sample_uid IN ({", ".join("%s" for _ in samp_list)})'
                 my_cursor.execute(samp_size_sql, samp_list)
                 sample_sizes = my_cursor.fetchall()
                 sample_sizes = extract_first(sample_sizes)
+                for sample_size in range(len(sample_sizes)):
+                    mod_row = list(table_row_list[sample_size])
+                    mod_row.append(sample_sizes[sample_size])
+                    table_row_list[sample_size] = mod_row
             try:
                 if bool(table_row_list) is False:
                     insert_pop = selected_pop_uid[0][0]
@@ -471,7 +509,7 @@ while True:
 
             except IndexError as err:
                 print("Whoops")
-            open_window(table_row_list, table_column_names, sample_sizes)
+            open_window(table_row_list, table_column_names)
 
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
