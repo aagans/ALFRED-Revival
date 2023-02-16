@@ -48,10 +48,13 @@ def open_about():
             break
 
 
-def open_window(table_data, table_headings):
+def open_window(table_data, table_headings, samp_table_data, samp_table_headings):
     layout_w2 = [[sg.Text('Generated Frequency Table')],
                  [sg.Table(table_data, table_headings, expand_x=True, expand_y=True, alternating_row_color='white',
                            auto_size_columns=True,enable_events=True, right_click_selects=True, k='-TableSelect-')],
+                 [sg.Text('Sample Info')],
+                 [sg.Table(samp_table_data, samp_table_headings, expand_x=True, expand_y=True, alternating_row_color='white',
+                           auto_size_columns=True,enable_events=True, right_click_selects=True, k='-SampleTableSelect-')],
                  [sg.Button('Export Table', key='-ExportTable-'),
                   sg.Button('Exit', key='-TableExit-')]]
     window_w2 = sg.Window("Frequency Table", layout_w2, resizable=True, icon=png)
@@ -70,7 +73,6 @@ def open_window(table_data, table_headings):
                 failure = 1
         if event_w2 == '-TableSelect-':
             row_values = window_w2['-TableSelect-'].get()
-            print(row_values)
             row_values = row_values[0]
             row_values = [str(x) for x in row_values]
             row_string = ", ".join(row_values)
@@ -296,7 +298,6 @@ while True:
             dup_list_pop.sort()
             sort_pop = dup_list_pop
             sort_pop = extract_first(sort_pop)
-            print(sort_pop)
             window['-PopSelect-'].update(values=sort_pop)
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
@@ -457,7 +458,6 @@ while True:
             my_cursor.execute(create_table_sql, args_table_list)
             table_column_names = my_cursor.column_names
             table_column_names = list(table_column_names)
-            table_column_names.append("Sample Size")
             table_column_names.remove("SNPCol")
             table_column_names = tuple(table_column_names)
             table_row_list = my_cursor.fetchall()
@@ -469,15 +469,46 @@ while True:
                 table_row_list[vals] = row_list
             samp_list = extract_first(table_row_list)
             samp_list = list(samp_list)
+
+            sample_table_row_list = samp_list.copy()
+            sample_table_column_names = ["Sample ID", "Sample Size", "Sample Description", "Number of Chromosomes", "Relationships to Other Samples"]
+
             if samp_list != []:
                 samp_size_sql = f'SELECT sample_size FROM samplegrouptable WHERE sample_uid IN ({", ".join("%s" for _ in samp_list)})'
                 my_cursor.execute(samp_size_sql, samp_list)
                 sample_sizes = my_cursor.fetchall()
                 sample_sizes = extract_first(sample_sizes)
                 for sample_size in range(len(sample_sizes)):
-                    mod_row = list(table_row_list[sample_size])
+                    mod_row = [sample_table_row_list[sample_size]]
                     mod_row.append(sample_sizes[sample_size])
-                    table_row_list[sample_size] = mod_row
+                    sample_table_row_list[sample_size] = mod_row
+                samp_desc_sql = f'SELECT sample_desc FROM samplegrouptable WHERE sample_uid IN ({", ".join("%s" for _ in samp_list)})'
+                my_cursor.execute(samp_desc_sql, samp_list)
+                sample_descs = my_cursor.fetchall()
+                sample_descs = extract_first(sample_descs)
+                for sample_desc in range(len(sample_descs)):
+                    mod_row = sample_table_row_list[sample_desc]
+                    mod_row.append(sample_descs[sample_desc])
+                    sample_table_row_list[sample_desc] = mod_row
+
+                samp_num_sql = f'SELECT chromosome_amount FROM samplegrouptable WHERE sample_uid IN ({", ".join("%s" for _ in samp_list)})'
+                my_cursor.execute(samp_num_sql, samp_list)
+                sample_nums = my_cursor.fetchall()
+                sample_nums = extract_first(sample_nums)
+                for sample_num in range(len(sample_nums)):
+                    mod_row = sample_table_row_list[sample_num]
+                    mod_row.append(sample_nums[sample_num])
+                    sample_table_row_list[sample_num] = mod_row
+
+                samp_relation_sql = f'SELECT sample_relationship FROM samplegrouptable WHERE sample_uid IN ({", ".join("%s" for _ in samp_list)})'
+                my_cursor.execute(samp_relation_sql, samp_list)
+                sample_relation = my_cursor.fetchall()
+                sample_relation = extract_first(sample_relation)
+                for sample_rel in range(len(sample_relation)):
+                    mod_row = sample_table_row_list[sample_rel]
+                    mod_row.append(sample_relation[sample_rel])
+                    sample_table_row_list[sample_rel] = mod_row
+
             try:
                 if bool(table_row_list) is False:
                     insert_pop = selected_pop_uid[0][0]
@@ -509,7 +540,7 @@ while True:
 
             except IndexError as err:
                 print("Whoops")
-            open_window(table_row_list, table_column_names)
+            open_window(table_row_list, table_column_names, sample_table_row_list, sample_table_column_names)
 
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
