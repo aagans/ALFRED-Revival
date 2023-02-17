@@ -1,3 +1,4 @@
+# region Imports of dependencies
 import csv
 import json
 import pickle
@@ -7,42 +8,16 @@ import mysql.connector
 import pyperclip
 from mysql.connector import Error
 
-with open("default_settings.json", "r") as file_def:
-    default_dict = json.load(file_def)
-with open("user_settings.json", "r") as file_def:
-    user_dict = json.load(file_def)
-sg.theme('GreenTan')
-connect_var = {"host": None, "user": None, "pass": None}
 
-for index in ["host", "user", "password"]:
-    if user_dict[index] is None or user_dict[index] == "":
-        connect_var[index] = default_dict[index]
-    else:
-        connect_var[index] = user_dict[index]
+# endregion
 
-version_installed = 1.1
-png = pickle.load(open("png.pickle", "rb"))
-database_connection_frame = [
-    [sg.Text('Connection Status:'), sg.Image('noconnect.png', subsample=40, key='-StatusImg-')],
-    [sg.Button("Connect", key="-DataConnect-"), sg.Button('Disconnect', key='-DataDisconnect-')]
-]
-
-
+# region Custom functions
 def extract_first(lst):
     return [item[0] for item in lst]
 
 
-def open_about():
-    layout_w3 = [[sg.Push(), sg.Text('About the ALFRED Revival Interface', justification='center',
-                                     expand_x=True, expand_y=True, font=['Helvetica', 14, 'bold']), sg.Push()],
-                 [sg.Push(), sg.Text('Designed and Created by A. J. Agans for the Bowdoin College Biology Department',
-                                     justification='center'), sg.Push()],
-                 [sg.Push(), sg.Text('Version 1.1 Release:', justification='center'),
-                  sg.Text('Fratercula arctica', font=['Helvetica', 11, 'italic'], justification='left'), sg.Push()],
-                 [sg.Push(), sg.Text('The phoenix logo has been designed using images from Flaticon.com'), sg.Push()],
-                 [sg.Push(), sg.Text('Copyright 2023 Aale Juno Agans, Hawkwood Research Group'), sg.Push()],
-                 [sg.Push(), sg.Text('This software is offered under the MIT License'), sg.Push()]]
-    window_w3 = sg.Window('About Page', layout_w3, icon=png)
+def open_about(layout_of_window):
+    window_w3 = sg.Window('About Page', layout_of_window, icon=png)
     while True:
         event_w3, values_w3 = window_w3.read()
         if event_w3 == sg.WIN_CLOSED:
@@ -72,7 +47,7 @@ def open_window(table_data, table_headings, samp_table_data, samp_table_headings
                     writer.writerow(table_headings)
                     writer.writerows(table_data)
             except TypeError:
-                failure = 1
+                "Hi!"
         if event_w2 == '-TableSelect-':
             row_values = window_w2['-TableSelect-'].get()
             row_values = row_values[0]
@@ -109,7 +84,41 @@ def fetch_results(which_pop):
     listed_snp_uid_1 = [item for t in list_snp_uid_1 for item in t]
     dup_snp_uid_1 = [*set(listed_snp_uid_1)]
     return dup_snp_uid_1
+# endregion
 
+
+# region Settings and meta info
+png = pickle.load(open("png.pickle", "rb"))
+with open("default_settings.json", "r") as file_def:
+    default_dict = json.load(file_def)
+with open("user_settings.json", "r") as file_def:
+    user_dict = json.load(file_def)
+connect_var = {"host": None, "user": None, "pass": None}
+for index in ["host", "user", "password"]:
+    if user_dict[index] is None or user_dict[index] == "":
+        connect_var[index] = default_dict[index]
+    else:
+        connect_var[index] = user_dict[index]
+
+version_installed = 1.1
+sg.theme('GreenTan')
+# endregion
+
+# region GUI frames/layout section
+database_connection_frame = [
+    [sg.Text('Connection Status:'), sg.Image('noconnect.png', subsample=40, key='-StatusImg-')],
+    [sg.Button("Connect", key="-DataConnect-"), sg.Button('Disconnect', key='-DataDisconnect-')]
+]
+
+layout_w3 = [[sg.Push(), sg.Text('About the ALFRED Revival Interface', justification='center',
+                                 expand_x=True, expand_y=True, font=['Helvetica', 14, 'bold']), sg.Push()],
+             [sg.Push(), sg.Text('Designed and Created by A. J. Agans for the Bowdoin College Biology Department',
+                                 justification='center'), sg.Push()],
+             [sg.Push(), sg.Text('Version 1.1 Release:', justification='center'),
+              sg.Text('Fratercula arctica', font=['Helvetica', 11, 'italic'], justification='left'), sg.Push()],
+             [sg.Push(), sg.Text('The phoenix logo has been designed using images from Flaticon.com'), sg.Push()],
+             [sg.Push(), sg.Text('Copyright 2023 Aale Juno Agans, Hawkwood Research Group'), sg.Push()],
+             [sg.Push(), sg.Text('This software is offered under the MIT License'), sg.Push()]]
 
 choice_selection_frame = [[sg.Text('Geographic Region:'),
                            sg.Combo(['Select From List', 'Please Connect to Database for Options!'],
@@ -168,7 +177,9 @@ layout = [[sg.Push(), sg.Text('Welcome to the ALFRED Revival Interface. Please m
           [sg.Button('Exit'), sg.Button('Settings'), sg.Button('About')]]
 
 window = sg.Window('ALFRED Revival Interface', layout, resizable=True, icon=png)
+# endregion
 
+# region GUI block
 while True:
     event, values = window.read()
     if event == sg.WIN_CLOSED or event == 'Exit':
@@ -188,10 +199,29 @@ while True:
         except NameError as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-    if event == '-PopSNPOutput-':
-        selected_pop_str = window['-PopSNPOutput-'].get()
-        selected_pop_str = str(selected_pop_str[0])
-        pyperclip.copy(selected_pop_str)
+
+    if event == 'About':
+        open_about(layout_w3)
+
+    if event == '-SettingsUpdate-':
+        try:
+            user_dict["host"] = values['-IPInput-']
+            user_dict["user"] = values['-UserInput-']
+            user_dict["password"] = values['-PassInput-']
+            for index in ["host", "user", "password"]:
+                if user_dict[index] is None or user_dict[index] == "":
+                    connect_var[index] = default_dict[index]
+                else:
+                    connect_var[index] = user_dict[index]
+            with open('user_settings.json', 'w') as json_file:
+                json.dump(user_dict, json_file)
+        except Error as err:
+            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
+        except NameError as err:
+            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
+
     if event == '-DataConnect-':
         try:
             alfred_db = mysql.connector.connect(
@@ -228,26 +258,6 @@ while True:
         except NameError as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-    if event == 'About':
-        open_about()
-    if event == '-SettingsUpdate-':
-        try:
-            user_dict["host"] = values['-IPInput-']
-            user_dict["user"] = values['-UserInput-']
-            user_dict["password"] = values['-PassInput-']
-            for index in ["host", "user", "password"]:
-                if user_dict[index] is None or user_dict[index] == "":
-                    connect_var[index] = default_dict[index]
-                else:
-                    connect_var[index] = user_dict[index]
-            with open('user_settings.json', 'w') as json_file:
-                json.dump(user_dict, json_file)
-        except Error as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
     if event == '-DataDisconnect-':
         try:
@@ -262,32 +272,6 @@ while True:
             sg.popup_error("Something went wrong: {} Please contact the system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
-    if event == '-PopSearchButton-':
-        pop_snp_selected = values['-SNPTypeField-']
-        pop_snp_selected = (pop_snp_selected,)
-        pop_snp_search_sql = 'SELECT SNP_id FROM snptable WHERE locus_name = %s'
-        my_cursor.execute(pop_snp_search_sql, pop_snp_selected)
-        snp_ids = my_cursor.fetchall()
-        if bool(snp_ids) is False:
-            sg.popup_error("Whoops! That is not a known locus name. Try again!", keep_on_top=True)
-        else:
-            samp_snp = 'SELECT sample_uid FROM samplecoveragetable WHERE snp_uid = %s'
-            my_cursor.execute(samp_snp, snp_ids[0])
-            samples_retrieved = my_cursor.fetchall()
-            samples_retrieved = extract_first(samples_retrieved)
-            samp_pop = 'SELECT pop_uid FROM samplegrouptable WHERE sample_uid IN ({0})'. \
-                format(', '.join('%s' for _ in samples_retrieved))
-            my_cursor.execute(samp_pop, samples_retrieved)
-            pops_retrieved = my_cursor.fetchall()
-            pops_retrieved = extract_first(pops_retrieved)
-            pops_retrieved = [*set(pops_retrieved)]
-            pop_names = 'SELECT Population from populationtable WHERE pop_uid IN ({0})'. \
-                format(', '.join('%s' for _ in pops_retrieved))
-            my_cursor.execute(pop_names, pops_retrieved)
-            pops_list = my_cursor.fetchall()
-            pops_list = extract_first(pops_list)
-            window['-PopSNPOutput-'].update(values=pops_list, visible=True)
-
     if event == '-RegionSelect-':
         try:
             selected_region = values['-RegionSelect-']
@@ -301,46 +285,6 @@ while True:
             sort_pop = dup_list_pop
             sort_pop = extract_first(sort_pop)
             window['-PopSelect-'].update(values=sort_pop)
-        except Error as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
-
-    if event == '-Reg1Choice-':
-        try:
-            selected_region_c = values['-Reg1Choice-']
-            if isinstance(selected_region_c, str):
-                selected_region_c = (selected_region_c,)
-            pop_sql_c = 'SELECT population FROM populationtable WHERE geo_region = %s'
-            my_cursor.execute(pop_sql_c, selected_region_c)
-            list_pop_c = my_cursor.fetchall()
-            dup_list_pop_c = [*set(list_pop_c)]
-            dup_list_pop_c.sort()
-            sort_pop_c = dup_list_pop_c
-            sort_pop_c = extract_first(sort_pop_c)
-            window['-Pop1Choice-'].update(values=sort_pop_c)
-        except Error as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
-
-    if event == '-Reg2Choice-':
-        try:
-            selected_region_d = values['-Reg2Choice-']
-            if isinstance(selected_region_d, str):
-                selected_region_d = (selected_region_d,)
-            pop_sql_d = 'SELECT population FROM populationtable WHERE geo_region = %s'
-            my_cursor.execute(pop_sql_d, selected_region_d)
-            list_pop_d = my_cursor.fetchall()
-            dup_list_pop_d = [*set(list_pop_d)]
-            dup_list_pop_d.sort()
-            sort_pop_d = dup_list_pop_d
-            sort_pop_d = extract_first(sort_pop_d)
-            window['-Pop2Choice-'].update(values=sort_pop_d)
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
@@ -408,28 +352,6 @@ while True:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
-    if event == '-FetchResults-':
-        snps_pop1 = fetch_results('-Pop1Choice-')
-        snps_pop2 = fetch_results('-Pop2Choice-')
-        list_common_snps = set(snps_pop1).intersection(snps_pop2)
-        try:
-            list_common_snps = [(x,) for x in list_common_snps]
-            list_common_snps = extract_first(list_common_snps)
-
-            sql_for_common = 'SELECT site_name, locus_name FROM snptable WHERE ' \
-                             f'SNP_id IN ({", ".join("%s" for _ in list_common_snps)})'
-            my_cursor.execute(sql_for_common, list_common_snps)
-            locuses_and_sites = my_cursor.fetchall()
-            locuses_and_sites.sort()
-            window['-SNPCommonOutput-'].update(values=locuses_and_sites)
-        except mysql.connector.errors.ProgrammingError:
-            sg.popup_ok("There are no common SNPs! Try a different selection of populations.", keep_on_top=True)
-        except NameError as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
-    if '+CLICKED+' in event:
-        selected_value = locuses_and_sites[event[2][0]][event[2][1]]
-        pyperclip.copy(selected_value)
     if event == '-RequestTable-':
         try:
             snp_uid_from_locus = 'SELECT SNP_id FROM snptable WHERE site_name = %s AND locus_name = %s'
@@ -560,4 +482,99 @@ while True:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
+    if event == '-PopSNPOutput-':
+        selected_pop_str = window['-PopSNPOutput-'].get()
+        selected_pop_str = str(selected_pop_str[0])
+        pyperclip.copy(selected_pop_str)
+
+    if event == '-PopSearchButton-':
+        pop_snp_selected = values['-SNPTypeField-']
+        pop_snp_selected = (pop_snp_selected,)
+        pop_snp_search_sql = 'SELECT SNP_id FROM snptable WHERE locus_name = %s'
+        my_cursor.execute(pop_snp_search_sql, pop_snp_selected)
+        snp_ids = my_cursor.fetchall()
+        if bool(snp_ids) is False:
+            sg.popup_error("Whoops! That is not a known locus name. Try again!", keep_on_top=True)
+        else:
+            samp_snp = 'SELECT sample_uid FROM samplecoveragetable WHERE snp_uid = %s'
+            my_cursor.execute(samp_snp, snp_ids[0])
+            samples_retrieved = my_cursor.fetchall()
+            samples_retrieved = extract_first(samples_retrieved)
+            samp_pop = 'SELECT pop_uid FROM samplegrouptable WHERE sample_uid IN ({0})'. \
+                format(', '.join('%s' for _ in samples_retrieved))
+            my_cursor.execute(samp_pop, samples_retrieved)
+            pops_retrieved = my_cursor.fetchall()
+            pops_retrieved = extract_first(pops_retrieved)
+            pops_retrieved = [*set(pops_retrieved)]
+            pop_names = 'SELECT Population from populationtable WHERE pop_uid IN ({0})'. \
+                format(', '.join('%s' for _ in pops_retrieved))
+            my_cursor.execute(pop_names, pops_retrieved)
+            pops_list = my_cursor.fetchall()
+            pops_list = extract_first(pops_list)
+            window['-PopSNPOutput-'].update(values=pops_list, visible=True)
+
+    if event == '-Reg1Choice-':
+        try:
+            selected_region_c = values['-Reg1Choice-']
+            if isinstance(selected_region_c, str):
+                selected_region_c = (selected_region_c,)
+            pop_sql_c = 'SELECT population FROM populationtable WHERE geo_region = %s'
+            my_cursor.execute(pop_sql_c, selected_region_c)
+            list_pop_c = my_cursor.fetchall()
+            dup_list_pop_c = [*set(list_pop_c)]
+            dup_list_pop_c.sort()
+            sort_pop_c = dup_list_pop_c
+            sort_pop_c = extract_first(sort_pop_c)
+            window['-Pop1Choice-'].update(values=sort_pop_c)
+        except Error as err:
+            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
+        except NameError as err:
+            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
+
+    if event == '-Reg2Choice-':
+        try:
+            selected_region_d = values['-Reg2Choice-']
+            if isinstance(selected_region_d, str):
+                selected_region_d = (selected_region_d,)
+            pop_sql_d = 'SELECT population FROM populationtable WHERE geo_region = %s'
+            my_cursor.execute(pop_sql_d, selected_region_d)
+            list_pop_d = my_cursor.fetchall()
+            dup_list_pop_d = [*set(list_pop_d)]
+            dup_list_pop_d.sort()
+            sort_pop_d = dup_list_pop_d
+            sort_pop_d = extract_first(sort_pop_d)
+            window['-Pop2Choice-'].update(values=sort_pop_d)
+        except Error as err:
+            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
+        except NameError as err:
+            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
+
+    if event == '-FetchResults-':
+        snps_pop1 = fetch_results('-Pop1Choice-')
+        snps_pop2 = fetch_results('-Pop2Choice-')
+        list_common_snps = set(snps_pop1).intersection(snps_pop2)
+        try:
+            list_common_snps = [(x,) for x in list_common_snps]
+            list_common_snps = extract_first(list_common_snps)
+
+            sql_for_common = 'SELECT site_name, locus_name FROM snptable WHERE ' \
+                             f'SNP_id IN ({", ".join("%s" for _ in list_common_snps)})'
+            my_cursor.execute(sql_for_common, list_common_snps)
+            locuses_and_sites = my_cursor.fetchall()
+            locuses_and_sites.sort()
+            window['-SNPCommonOutput-'].update(values=locuses_and_sites)
+        except mysql.connector.errors.ProgrammingError:
+            sg.popup_ok("There are no common SNPs! Try a different selection of populations.", keep_on_top=True)
+        except NameError as err:
+            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
+    if '+CLICKED+' in event:
+        selected_value = locuses_and_sites[event[2][0]][event[2][1]]
+        pyperclip.copy(selected_value)
+
 window.close()
+# endregion
