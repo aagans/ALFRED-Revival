@@ -100,7 +100,7 @@ for index in ["host", "user", "password"]:
     else:
         connect_var[index] = user_dict[index]
 
-version_installed = 1.1
+version_installed = 1.2
 sg.theme('GreenTan')
 # endregion
 
