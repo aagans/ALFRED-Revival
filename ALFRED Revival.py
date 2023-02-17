@@ -1,10 +1,11 @@
-import PySimpleGUI as sg
-import pickle
-import mysql.connector
-from mysql.connector import Error
 import csv
 import json
+import pickle
+
+import PySimpleGUI as sg
+import mysql.connector
 import pyperclip
+from mysql.connector import Error
 
 with open("default_settings.json", "r") as file_def:
     default_dict = json.load(file_def)
@@ -51,10 +52,11 @@ def open_about():
 def open_window(table_data, table_headings, samp_table_data, samp_table_headings):
     layout_w2 = [[sg.Text('Generated Frequency Table')],
                  [sg.Table(table_data, table_headings, expand_x=True, expand_y=True, alternating_row_color='white',
-                           auto_size_columns=True,enable_events=True, right_click_selects=True, k='-TableSelect-')],
+                           auto_size_columns=True, enable_events=True, right_click_selects=True, k='-TableSelect-')],
                  [sg.Text('Sample Info')],
-                 [sg.Table(samp_table_data, samp_table_headings, expand_x=True, expand_y=True, alternating_row_color='white',
-                           auto_size_columns=True,enable_events=True, right_click_selects=True, k='-SampleTableSelect-')],
+                 [sg.Table(samp_table_data, samp_table_headings, expand_x=True, expand_y=True,
+                           alternating_row_color='white', auto_size_columns=True, enable_events=True,
+                           right_click_selects=True, k='-SampleTableSelect-')],
                  [sg.Button('Export Table', key='-ExportTable-'),
                   sg.Button('Exit', key='-TableExit-')]]
     window_w2 = sg.Window("Frequency Table", layout_w2, resizable=True, icon=png)
@@ -414,7 +416,8 @@ while True:
             list_common_snps = [(x,) for x in list_common_snps]
             list_common_snps = extract_first(list_common_snps)
 
-            sql_for_common = f'SELECT site_name, locus_name FROM snptable WHERE SNP_id IN ({", ".join("%s" for _ in list_common_snps)})'
+            sql_for_common = 'SELECT site_name, locus_name FROM snptable WHERE ' \
+                             f'SNP_id IN ({", ".join("%s" for _ in list_common_snps)})'
             my_cursor.execute(sql_for_common, list_common_snps)
             locuses_and_sites = my_cursor.fetchall()
             locuses_and_sites.sort()
@@ -450,7 +453,8 @@ while True:
             table_name = my_cursor.fetchall()
             table_name = table_name[0][0].lower()
 
-            create_table_sql = f'SELECT * FROM {table_name} WHERE SNPCol = %s AND SampCol IN ({", ".join("%s" for val in dup_sample_uid)})'
+            create_table_sql = f'SELECT * FROM {table_name} WHERE SNPCol = %s AND SampCol ' \
+                               f'IN ({", ".join("%s" for val in dup_sample_uid)})'
 
             args_table_list = [locus_uid_requested[0]]
             args_table_list.extend(dup_sample_uid)
@@ -471,18 +475,20 @@ while True:
             samp_list = list(samp_list)
 
             sample_table_row_list = samp_list.copy()
-            sample_table_column_names = ["Sample ID", "Sample Size", "Sample Description", "Number of Chromosomes", "Relationships to Other Samples"]
+            sample_table_column_names = ["Sample ID", "Sample Size", "Sample Description", "Number of Chromosomes",
+                                         "Relationships to Other Samples"]
 
             if samp_list != []:
-                samp_size_sql = f'SELECT sample_size FROM samplegrouptable WHERE sample_uid IN ({", ".join("%s" for _ in samp_list)})'
+                samp_size_sql = 'SELECT sample_size FROM samplegrouptable WHERE ' \
+                                f'sample_uid IN ({", ".join("%s" for _ in samp_list)})'
                 my_cursor.execute(samp_size_sql, samp_list)
                 sample_sizes = my_cursor.fetchall()
                 sample_sizes = extract_first(sample_sizes)
                 for sample_size in range(len(sample_sizes)):
-                    mod_row = [sample_table_row_list[sample_size]]
-                    mod_row.append(sample_sizes[sample_size])
+                    mod_row = [sample_table_row_list[sample_size], sample_sizes[sample_size]]
                     sample_table_row_list[sample_size] = mod_row
-                samp_desc_sql = f'SELECT sample_desc FROM samplegrouptable WHERE sample_uid IN ({", ".join("%s" for _ in samp_list)})'
+                samp_desc_sql = 'SELECT sample_desc FROM samplegrouptable WHERE ' \
+                                f'sample_uid IN ({", ".join("%s" for _ in samp_list)})'
                 my_cursor.execute(samp_desc_sql, samp_list)
                 sample_descs = my_cursor.fetchall()
                 sample_descs = extract_first(sample_descs)
@@ -491,7 +497,8 @@ while True:
                     mod_row.append(sample_descs[sample_desc])
                     sample_table_row_list[sample_desc] = mod_row
 
-                samp_num_sql = f'SELECT chromosome_amount FROM samplegrouptable WHERE sample_uid IN ({", ".join("%s" for _ in samp_list)})'
+                samp_num_sql = 'SELECT chromosome_amount FROM samplegrouptable WHERE ' \
+                               f'sample_uid IN ({", ".join("%s" for _ in samp_list)})'
                 my_cursor.execute(samp_num_sql, samp_list)
                 sample_nums = my_cursor.fetchall()
                 sample_nums = extract_first(sample_nums)
@@ -500,7 +507,8 @@ while True:
                     mod_row.append(sample_nums[sample_num])
                     sample_table_row_list[sample_num] = mod_row
 
-                samp_relation_sql = f'SELECT sample_relationship FROM samplegrouptable WHERE sample_uid IN ({", ".join("%s" for _ in samp_list)})'
+                samp_relation_sql = 'SELECT sample_relationship FROM samplegrouptable WHERE ' \
+                                    f'sample_uid IN ({", ".join("%s" for _ in samp_list)})'
                 my_cursor.execute(samp_relation_sql, samp_list)
                 sample_relation = my_cursor.fetchall()
                 sample_relation = extract_first(sample_relation)
