@@ -32,22 +32,10 @@ def open_window(table_data, table_headings, samp_table_data, samp_table_headings
                  [sg.Table(samp_table_data, samp_table_headings, expand_x=True, expand_y=True,
                            alternating_row_color='white', auto_size_columns=True, enable_events=True,
                            right_click_selects=True, k='-SampleTableSelect-')],
-                 [sg.Button('Export Table', key='-ExportTable-'),
-                  sg.Button('Exit', key='-TableExit-')]]
+                 [sg.Button('Exit', key='-TableExit-')]]
     window_w2 = sg.Window("Frequency Table", layout_w2, resizable=True, icon=png)
     while True:
         event_w2, values_w2 = window_w2.read()
-        if event_w2 == '-ExportTable-':
-            file_path = sg.popup_get_file('Please save your table!', 'Saving Frequency Table as CSV', save_as=True,
-                                          file_types=(('.csv',),), default_extension='.csv',
-                                          default_path='~/Documents/')
-            try:
-                with open(file_path, "w", newline="") as f:
-                    writer = csv.writer(f)
-                    writer.writerow(table_headings)
-                    writer.writerows(table_data)
-            except TypeError:
-                "Hi!"
         if event_w2 == '-TableSelect-':
             row_values = window_w2['-TableSelect-'].get()
             row_values = row_values[0]
@@ -84,6 +72,27 @@ def fetch_results(which_pop):
     listed_snp_uid_1 = [item for t in list_snp_uid_1 for item in t]
     dup_snp_uid_1 = [*set(listed_snp_uid_1)]
     return dup_snp_uid_1
+
+
+def region_comparison(region_submit, update_box):
+    try:
+        selected_region_c = values[f'{region_submit}']
+        if isinstance(selected_region_c, str):
+            selected_region_c = (selected_region_c,)
+        pop_sql_c = 'SELECT population FROM populationtable WHERE geo_region = %s'
+        my_cursor.execute(pop_sql_c, selected_region_c)
+        list_pop_c = my_cursor.fetchall()
+        dup_list_pop_c = [*set(list_pop_c)]
+        dup_list_pop_c.sort()
+        sort_pop_c = dup_list_pop_c
+        sort_pop_c = extract_first(sort_pop_c)
+        window[f'{update_box}'].update(values=sort_pop_c)
+    except Error as err:
+        sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                       "aagans@bowdoin.edu".format(err), keep_on_top=True)
+    except NameError as err:
+        sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                       "aagans@bowdoin.edu".format(err), keep_on_top=True)
 # endregion
 
 
@@ -100,7 +109,7 @@ for index in ["host", "user", "password"]:
     else:
         connect_var[index] = user_dict[index]
 
-version_installed = 1.2
+version_installed = 1.3
 sg.theme('GreenTan')
 # endregion
 
@@ -114,7 +123,7 @@ layout_w3 = [[sg.Push(), sg.Text('About the ALFRED Revival Interface', justifica
                                  expand_x=True, expand_y=True, font=['Helvetica', 14, 'bold']), sg.Push()],
              [sg.Push(), sg.Text('Designed and Created by A. J. Agans for the Bowdoin College Biology Department',
                                  justification='center'), sg.Push()],
-             [sg.Push(), sg.Text('Version 1.1 Release:', justification='center'),
+             [sg.Push(), sg.Text(f'Version {version_installed} Release:', justification='center'),
               sg.Text('Fratercula arctica', font=['Helvetica', 11, 'italic'], justification='left'), sg.Push()],
              [sg.Push(), sg.Text('The phoenix logo has been designed using images from Flaticon.com'), sg.Push()],
              [sg.Push(), sg.Text('Copyright 2023 Aale Juno Agans, Hawkwood Research Group'), sg.Push()],
@@ -134,19 +143,49 @@ choice_selection_frame = [[sg.Text('Geographic Region:'),
                                     'Select From List', key='-LocusSelect-', enable_events=True)],
                           [sg.Button('Retrieve Frequency Data', key='-RequestTable-')]
                           ]
-search_pop_from_snp_frame = [[sg.Text('Type the name of a locus to see what populations have been sampled for it!')],
+search_pop_from_snp_frame = [[sg.Text('Type the name of a locus or SNPs to see what populations have been sampled for it!')],
                              [sg.Input(key='-SNPTypeField-'), sg.Button(button_text='Find Populations',
-                                                                        key='-PopSearchButton-')],
-                             [sg.Listbox(["Populations will be found here!"], select_mode='LISTBOX_SELECT_MODE_BROWSE',
+                                                                        key='-PopSearchButton-'),
+                              sg.Checkbox("Use SNP instead of locus", key = '-UseSNP-', enable_events = True)],
+                             [sg.Listbox(["Populations will be found here!"], select_mode='LISTBOX_SELECT_MODE_EXTENDED',
                                          key='-PopSNPOutput-', visible=False, expand_y=True, expand_x=True,
                                          enable_events=True)]]
 
-comparison_frame = [[sg.Text('Choose Two Regions')],
+comparison_frame = [[sg.Slider(range = (2,15), default_value = 1, resolution = 1,
+                               orientation = 'h', key = '-CompSlider-'),
+                     sg.Button("Select Number of Populations to Compare", key='-UpdateNumberComparison-')],
+                    [sg.Text('Choose Multiple Regions')],
                     [sg.Combo(['Connect to Database for Options!'], key='-Reg1Choice-', enable_events=True),
-                     sg.Combo(['Connect to Database for Options!'], key='-Reg2Choice-', enable_events=True)],
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg2Choice-', enable_events=True),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg3Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg4Choice-', enable_events=True, visible=False)],
+                     [sg.Combo(['Connect to Database for Options!'], key='-Reg5Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg6Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg7Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg8Choice-', enable_events=True, visible=False)],
+                     [sg.Combo(['Connect to Database for Options!'], key='-Reg9Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg10Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg11Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg12Choice-', enable_events=True, visible=False)],
+                     [sg.Combo(['Connect to Database for Options!'], key='-Reg13Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg14Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg15Choice-', enable_events=True, visible=False)],
                     [sg.Text('Choose Two Populations')],
                     [sg.Combo(['Connect to Database for Options!'], key='-Pop1Choice-', enable_events=True),
-                     sg.Combo(['Connect to Database for Options!'], key='-Pop2Choice-', enable_events=True)],
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop2Choice-', enable_events=True),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop3Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop4Choice-', enable_events=True, visible=False)],
+                     [sg.Combo(['Connect to Database for Options!'], key='-Pop5Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop6Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop7Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop8Choice-', enable_events=True, visible=False)],
+                     [sg.Combo(['Connect to Database for Options!'], key='-Pop9Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop10Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop11Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop12Choice-', enable_events=True, visible=False)],
+                     [sg.Combo(['Connect to Database for Options!'], key='-Pop13Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop14Choice-', enable_events=True, visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop15Choice-', enable_events=True, visible=False)],
                     [sg.Table(values=[['SNP', 'Locus']], headings=['SNP Name', 'Locus Name'], expand_y=True,
                               expand_x=True, key='-SNPCommonOutput-', alternating_row_color='white',
                               auto_size_columns=True, enable_click_events=True)],
@@ -158,16 +197,26 @@ settings_frame = [[sg.Text('Database IP:'), sg.Input(default_text=None, key='-IP
                   [sg.Button('Save Settings', key='-SettingsUpdate-')]
                   ]
 
+sample_info_frame = [[sg.Text("Type a Sample ID")],
+                      [sg.Input(key='-SampleIDField-'), sg.Button(button_text='Find Sample Info',
+                                                                 key='-SampleIDButton-')],
+                     [sg.Multiline("Sample Descriptions will be found here!",
+                                 key='-SampleDescOutput-', visible=False, expand_y=True, expand_x=True,
+                                 enable_events=True)]
+                     ]
+
 tab_1_layout = [[sg.Frame('Query Options', choice_selection_frame, expand_x=True)],
                 [sg.Frame('Population Search from Locus Name', search_pop_from_snp_frame,
                           expand_x=True, expand_y=True)]]
 tab_2_layout = [[sg.Frame('Population Comparison Options', comparison_frame, expand_x=True, expand_y=True)]]
 tab_3_layout = [[sg.Frame('Settings Options', settings_frame, expand_x=True, expand_y=True)]]
+tab_4_layout = [[sg.Frame('Sample Information', sample_info_frame, expand_x=True, expand_y=True )]]
 
 left_column_layout = [[sg.Frame('Database Connection', database_connection_frame, expand_x=True)],
                       [sg.TabGroup([[sg.Tab('Query Selection', tab_1_layout),
                                      sg.Tab('Comparison Selection', tab_2_layout),
-                                     sg.Tab('Settings', tab_3_layout, visible=False, key='-SettingsTab-')]
+                                     sg.Tab('Settings', tab_3_layout, visible=False, key='-SettingsTab-'),
+                                     sg.Tab('Sample Info', tab_4_layout)]
                                     ], expand_x=True, expand_y=True)]
                       ]
 
@@ -240,6 +289,20 @@ while True:
             window['-RegionSelect-'].update(values=sort_region)
             window['-Reg1Choice-'].update(values=sort_region)
             window['-Reg2Choice-'].update(values=sort_region)
+            window['-Reg3Choice-'].update(values=sort_region)
+            window['-Reg4Choice-'].update(values=sort_region)
+            window['-Reg5Choice-'].update(values=sort_region)
+            window['-Reg6Choice-'].update(values=sort_region)
+            window['-Reg7Choice-'].update(values=sort_region)
+            window['-Reg8Choice-'].update(values=sort_region)
+            window['-Reg9Choice-'].update(values=sort_region)
+            window['-Reg10Choice-'].update(values=sort_region)
+            window['-Reg11Choice-'].update(values=sort_region)
+            window['-Reg12Choice-'].update(values=sort_region)
+            window['-Reg13Choice-'].update(values=sort_region)
+            window['-Reg14Choice-'].update(values=sort_region)
+            window['-Reg15Choice-'].update(values=sort_region)
+
             window['-IPInput-'].update(visible=False)
             window['-UserInput-'].update(visible=False)
             window['-PassInput-'].update(visible=False)
@@ -481,23 +544,41 @@ while True:
         except IndexError as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-
     if event == '-PopSNPOutput-':
         selected_pop_str = window['-PopSNPOutput-'].get()
         selected_pop_str = str(selected_pop_str[0])
         pyperclip.copy(selected_pop_str)
-
+    if event == '-SampleIDButton-':
+        sample_id_value = values['-SampleIDField-']
+        snp_desc_search = f"SELECT sample_desc FROM samplegrouptable WHERE sample_uid = '{sample_id_value}'"
+        my_cursor.execute(snp_desc_search)
+        sample_desc_str = my_cursor.fetchall()
+        sample_descs_str = extract_first(sample_desc_str)
+        sample_descs_str = sample_descs_str[0]
+        space_indexes = [i for i in range(len(sample_descs_str)) if sample_descs_str.startswith(" ", i)]
+        space_indexes = [space_indexes[i] for i in range(0,len(space_indexes),14)]
+        space_indexes.pop(0)
+        for i in space_indexes:
+            sample_descs_str = sample_descs_str[:i] + "\n" + sample_descs_str[(i+1):]
+        print(sample_descs_str)
+        window['-SampleDescOutput-'].update(value=sample_descs_str, visible=True)
+        
     if event == '-PopSearchButton-':
+        use_locus = window['-UseSNP-'].get()
         pop_snp_selected = values['-SNPTypeField-']
         pop_snp_selected = (pop_snp_selected,)
-        pop_snp_search_sql = 'SELECT SNP_id FROM snptable WHERE locus_name = %s'
+        if use_locus is False:
+            pop_snp_search_sql = 'SELECT SNP_id FROM snptable WHERE locus_name = %s'
+        else:
+            pop_snp_search_sql = 'SELECT SNP_id FROM snptable WHERE site_name = %s'
         my_cursor.execute(pop_snp_search_sql, pop_snp_selected)
         snp_ids = my_cursor.fetchall()
+        snp_ids = extract_first(snp_ids)
         if bool(snp_ids) is False:
             sg.popup_error("Whoops! That is not a known locus name. Try again!", keep_on_top=True)
         else:
-            samp_snp = 'SELECT sample_uid FROM samplecoveragetable WHERE snp_uid = %s'
-            my_cursor.execute(samp_snp, snp_ids[0])
+            samp_snp = f'SELECT sample_uid FROM samplecoveragetable WHERE snp_uid IN ({", ".join("%s" for _ in snp_ids)})'
+            my_cursor.execute(samp_snp, snp_ids)
             samples_retrieved = my_cursor.fetchall()
             samples_retrieved = extract_first(samples_retrieved)
             samp_pop = 'SELECT pop_uid FROM samplegrouptable WHERE sample_uid IN ({0})'. \
@@ -511,52 +592,49 @@ while True:
             my_cursor.execute(pop_names, pops_retrieved)
             pops_list = my_cursor.fetchall()
             pops_list = extract_first(pops_list)
+            pops_list.sort()
             window['-PopSNPOutput-'].update(values=pops_list, visible=True)
 
     if event == '-Reg1Choice-':
-        try:
-            selected_region_c = values['-Reg1Choice-']
-            if isinstance(selected_region_c, str):
-                selected_region_c = (selected_region_c,)
-            pop_sql_c = 'SELECT population FROM populationtable WHERE geo_region = %s'
-            my_cursor.execute(pop_sql_c, selected_region_c)
-            list_pop_c = my_cursor.fetchall()
-            dup_list_pop_c = [*set(list_pop_c)]
-            dup_list_pop_c.sort()
-            sort_pop_c = dup_list_pop_c
-            sort_pop_c = extract_first(sort_pop_c)
-            window['-Pop1Choice-'].update(values=sort_pop_c)
-        except Error as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
-
+        region_comparison('-Reg1Choice-', '-Pop1Choice-')
     if event == '-Reg2Choice-':
-        try:
-            selected_region_d = values['-Reg2Choice-']
-            if isinstance(selected_region_d, str):
-                selected_region_d = (selected_region_d,)
-            pop_sql_d = 'SELECT population FROM populationtable WHERE geo_region = %s'
-            my_cursor.execute(pop_sql_d, selected_region_d)
-            list_pop_d = my_cursor.fetchall()
-            dup_list_pop_d = [*set(list_pop_d)]
-            dup_list_pop_d.sort()
-            sort_pop_d = dup_list_pop_d
-            sort_pop_d = extract_first(sort_pop_d)
-            window['-Pop2Choice-'].update(values=sort_pop_d)
-        except Error as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
+        region_comparison('-Reg2Choice-', '-Pop2Choice-')
+    if event == '-Reg3Choice-':
+        region_comparison('-Reg3Choice-', '-Pop3Choice-')
+    if event == '-Reg4Choice-':
+        region_comparison('-Reg4Choice-', '-Pop4Choice-')
+    if event == '-Reg5Choice-':
+        region_comparison('-Reg5Choice-', '-Pop5Choice-')
+    if event == '-Reg6Choice-':
+        region_comparison('-Reg6Choice-', '-Pop6Choice-')
+    if event == '-Reg7Choice-':
+        region_comparison('-Reg7Choice-', '-Pop7Choice-')
+    if event == '-Reg8Choice-':
+        region_comparison('-Reg8Choice-', '-Pop8Choice-')
+    if event == '-Reg9Choice-':
+        region_comparison('-Reg9Choice-', '-Pop9Choice-')
+    if event == '-Reg10Choice-':
+        region_comparison('-Reg10Choice-', '-Pop10Choice-')
+    if event == '-Reg11Choice-':
+        region_comparison('-Reg11Choice-', '-Pop11Choice-')
+    if event == '-Reg12Choice-':
+        region_comparison('-Reg12Choice-', '-Pop12Choice-')
+    if event == '-Reg13Choice-':
+        region_comparison('-Reg13Choice-', '-Pop13Choice-')
+    if event == '-Reg14Choice-':
+        region_comparison('-Reg14Choice-', '-Pop14Choice-')
+    if event == '-Reg15Choice-':
+        region_comparison('-Reg15Choice-', '-Pop15Choice-')
 
     if event == '-FetchResults-':
+        number_of_comparisons = values['-CompSlider-']
+        number_of_comparisons = int(number_of_comparisons)
+        results_snps = []
+        for i in range(2, number_of_comparisons+1):
+            result_for_single = fetch_results(f'-Pop{i}Choice-')
+            results_snps.append(result_for_single)
         snps_pop1 = fetch_results('-Pop1Choice-')
-        snps_pop2 = fetch_results('-Pop2Choice-')
-        list_common_snps = set(snps_pop1).intersection(snps_pop2)
+        list_common_snps = set(snps_pop1).intersection(*[set(x) for x in results_snps])
         try:
             list_common_snps = [(x,) for x in list_common_snps]
             list_common_snps = extract_first(list_common_snps)
@@ -572,9 +650,21 @@ while True:
         except NameError as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
+    if event == '-UpdateNumberComparison-':
+        number_of_comparisons = values['-CompSlider-']
+        number_of_comparisons = int(number_of_comparisons)
+        for i in range(2,number_of_comparisons+1):
+            window[f'-Reg{i}Choice-'].update(visible = True)
+            window[f'-Pop{i}Choice-'].update(visible = True)
+        for i in range(number_of_comparisons+1, 16):
+            window[f'-Reg{i}Choice-'].update(visible=False)
+            window[f'-Pop{i}Choice-'].update(visible=False)
     if '+CLICKED+' in event:
-        selected_value = locuses_and_sites[event[2][0]][event[2][1]]
-        pyperclip.copy(selected_value)
+        try:
+            selected_value = locuses_and_sites[event[2][0]][event[2][1]]
+            pyperclip.copy(selected_value)
+        except NameError:
+            error = 1
 
 window.close()
 # endregion
