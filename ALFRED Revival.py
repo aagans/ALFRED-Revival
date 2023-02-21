@@ -49,6 +49,10 @@ def open_window(table_data, table_headings, samp_table_data, samp_table_headings
     window_w2.close()
 
 
+def drop_down_search(search_text, full_list):
+    updated_list = [x for x in full_list if x.startswith(search_text)]
+    return updated_list
+
 def fetch_results(which_pop):
     selected_pop_1 = values[which_pop]
 
@@ -90,7 +94,7 @@ def region_comparison(region_submit, update_box):
     except Error as err:
         sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                        "aagans@bowdoin.edu".format(err), keep_on_top=True)
-    except NameError as err:
+    except (NameError, IndexError) as err:
         sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                        "aagans@bowdoin.edu".format(err), keep_on_top=True)
 # endregion
@@ -245,7 +249,7 @@ while True:
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
+        except (NameError, IndexError) as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
@@ -267,7 +271,7 @@ while True:
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
+        except (NameError, IndexError) as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
@@ -287,22 +291,8 @@ while True:
             dup_list_region.sort()
             sort_region = dup_list_region
             window['-RegionSelect-'].update(values=sort_region)
-            window['-Reg1Choice-'].update(values=sort_region)
-            window['-Reg2Choice-'].update(values=sort_region)
-            window['-Reg3Choice-'].update(values=sort_region)
-            window['-Reg4Choice-'].update(values=sort_region)
-            window['-Reg5Choice-'].update(values=sort_region)
-            window['-Reg6Choice-'].update(values=sort_region)
-            window['-Reg7Choice-'].update(values=sort_region)
-            window['-Reg8Choice-'].update(values=sort_region)
-            window['-Reg9Choice-'].update(values=sort_region)
-            window['-Reg10Choice-'].update(values=sort_region)
-            window['-Reg11Choice-'].update(values=sort_region)
-            window['-Reg12Choice-'].update(values=sort_region)
-            window['-Reg13Choice-'].update(values=sort_region)
-            window['-Reg14Choice-'].update(values=sort_region)
-            window['-Reg15Choice-'].update(values=sort_region)
-
+            for i in range(1,16):
+                window[f'-Reg{i}Choice-'].update(values=sort_region)
             window['-IPInput-'].update(visible=False)
             window['-UserInput-'].update(visible=False)
             window['-PassInput-'].update(visible=False)
@@ -318,7 +308,7 @@ while True:
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
+        except (NameError, IndexError) as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
@@ -329,7 +319,7 @@ while True:
             window['-IPInput-'].update(visible=True)
             window['-UserInput-'].update(visible=True)
             window['-PassInput-'].update(visible=True)
-        except NameError:
+        except (NameError, IndexError):
             sg.popup_error("Oops! Please Connect to the Database Before Disconnecting", keep_on_top=True)
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact the system administrator for assistance at "
@@ -351,7 +341,7 @@ while True:
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
+        except (NameError, IndexError) as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
@@ -360,37 +350,35 @@ while True:
             selected_pop = values['-PopSelect-']
             if isinstance(selected_pop, str):
                 selected_pop = (selected_pop,)
-            pop_uid_selected = 'SELECT pop_uid FROM populationtable WHERE population = %s'
+            pop_uid_selected = 'SELECT pop_uid FROM populationtable WHERE population = %s LIMIT 1'
             my_cursor.execute(pop_uid_selected, selected_pop)
             selected_pop_uid = my_cursor.fetchall()
 
-            find_sample = 'SELECT sample_uid FROM samplegrouptable WHERE pop_uid = %s'
+            find_sample = 'SELECT DISTINCT sample_uid FROM samplegrouptable WHERE pop_uid = %s'
             my_cursor.execute(find_sample, selected_pop_uid[0])
             list_sample_uid = my_cursor.fetchall()
             listed_sample_uid = [item for t in list_sample_uid for item in t]
-            dup_sample_uid = [*set(listed_sample_uid)]
+            listed_sample_uid.sort()
 
-            find_snp_uid = 'SELECT snp_uid FROM samplecoveragetable WHERE sample_uid IN ({0})'.format(
-                ', '.join('%s' for _ in dup_sample_uid))
-            my_cursor.execute(find_snp_uid, dup_sample_uid)
+            find_snp_uid = 'SELECT DISTINCT snp_uid FROM samplecoveragetable WHERE sample_uid IN ({0})'.format(
+                ', '.join('%s' for _ in listed_sample_uid))
+            my_cursor.execute(find_snp_uid, listed_sample_uid)
             list_snp_uid = my_cursor.fetchall()
             listed_snp_uid = [item for t in list_snp_uid for item in t]
-            dup_snp_uid = [*set(listed_snp_uid)]
+            listed_snp_uid.sort()
 
-            find_snp_name = 'SELECT site_name FROM snptable WHERE SNP_id IN ({0})'.format(
-                ', '.join('%s' for _ in dup_snp_uid))
-            my_cursor.execute(find_snp_name, dup_snp_uid)
+            find_snp_name = 'SELECT DISTINCT site_name FROM snptable WHERE SNP_id IN ({0})'.format(
+                ', '.join('%s' for _ in listed_snp_uid))
+            my_cursor.execute(find_snp_name, listed_snp_uid)
             list_snp_name = my_cursor.fetchall()
 
             listed_snp_name = [item for t in list_snp_name for item in t]
-            dup_snp_name = [*set(listed_snp_name)]
-            dup_snp_name.sort()
-            sort_snp = dup_snp_name
-            window['-SNPSelect-'].update(values=sort_snp)
+            listed_snp_name.sort()
+            window['-SNPSelect-'].update(values=listed_snp_name)
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
+        except (NameError, IndexError) as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
@@ -411,7 +399,7 @@ while True:
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
+        except (NameError, IndexError) as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
@@ -538,62 +526,68 @@ while True:
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except NameError as err:
+        except (NameError, IndexError) as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        except IndexError as err:
-            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
-                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
+
     if event == '-PopSNPOutput-':
         selected_pop_str = window['-PopSNPOutput-'].get()
         selected_pop_str = str(selected_pop_str[0])
         pyperclip.copy(selected_pop_str)
     if event == '-SampleIDButton-':
-        sample_id_value = values['-SampleIDField-']
-        snp_desc_search = f"SELECT sample_desc FROM samplegrouptable WHERE sample_uid = '{sample_id_value}'"
-        my_cursor.execute(snp_desc_search)
-        sample_desc_str = my_cursor.fetchall()
-        sample_descs_str = extract_first(sample_desc_str)
-        sample_descs_str = sample_descs_str[0]
-        space_indexes = [i for i in range(len(sample_descs_str)) if sample_descs_str.startswith(" ", i)]
-        space_indexes = [space_indexes[i] for i in range(0,len(space_indexes),14)]
-        space_indexes.pop(0)
-        for i in space_indexes:
-            sample_descs_str = sample_descs_str[:i] + "\n" + sample_descs_str[(i+1):]
-        print(sample_descs_str)
-        window['-SampleDescOutput-'].update(value=sample_descs_str, visible=True)
+        try:
+            sample_id_value = values['-SampleIDField-']
+            snp_desc_search = f"SELECT sample_desc FROM samplegrouptable WHERE sample_uid = '{sample_id_value}'"
+            my_cursor.execute(snp_desc_search)
+            sample_desc_str = my_cursor.fetchall()
+            sample_descs_str = extract_first(sample_desc_str)
+            sample_descs_str = sample_descs_str[0]
+            space_indexes = [i for i in range(len(sample_descs_str)) if sample_descs_str.startswith(" ", i)]
+            space_indexes = [space_indexes[i] for i in range(0,len(space_indexes),14)]
+            space_indexes.pop(0)
+            for i in space_indexes:
+                sample_descs_str = sample_descs_str[:i] + "\n" + sample_descs_str[(i+1):]
+            print(sample_descs_str)
+            window['-SampleDescOutput-'].update(value=sample_descs_str, visible=True)
+        except (NameError, IndexError) as err:
+            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
         
     if event == '-PopSearchButton-':
-        use_locus = window['-UseSNP-'].get()
-        pop_snp_selected = values['-SNPTypeField-']
-        pop_snp_selected = (pop_snp_selected,)
-        if use_locus is False:
-            pop_snp_search_sql = 'SELECT SNP_id FROM snptable WHERE locus_name = %s'
-        else:
-            pop_snp_search_sql = 'SELECT SNP_id FROM snptable WHERE site_name = %s'
-        my_cursor.execute(pop_snp_search_sql, pop_snp_selected)
-        snp_ids = my_cursor.fetchall()
-        snp_ids = extract_first(snp_ids)
-        if bool(snp_ids) is False:
-            sg.popup_error("Whoops! That is not a known locus name. Try again!", keep_on_top=True)
-        else:
-            samp_snp = f'SELECT sample_uid FROM samplecoveragetable WHERE snp_uid IN ({", ".join("%s" for _ in snp_ids)})'
-            my_cursor.execute(samp_snp, snp_ids)
-            samples_retrieved = my_cursor.fetchall()
-            samples_retrieved = extract_first(samples_retrieved)
-            samp_pop = 'SELECT pop_uid FROM samplegrouptable WHERE sample_uid IN ({0})'. \
-                format(', '.join('%s' for _ in samples_retrieved))
-            my_cursor.execute(samp_pop, samples_retrieved)
-            pops_retrieved = my_cursor.fetchall()
-            pops_retrieved = extract_first(pops_retrieved)
-            pops_retrieved = [*set(pops_retrieved)]
-            pop_names = 'SELECT Population from populationtable WHERE pop_uid IN ({0})'. \
-                format(', '.join('%s' for _ in pops_retrieved))
-            my_cursor.execute(pop_names, pops_retrieved)
-            pops_list = my_cursor.fetchall()
-            pops_list = extract_first(pops_list)
-            pops_list.sort()
-            window['-PopSNPOutput-'].update(values=pops_list, visible=True)
+        try:
+            use_locus = window['-UseSNP-'].get()
+            pop_snp_selected = values['-SNPTypeField-']
+            pop_snp_selected = (pop_snp_selected,)
+            if use_locus is False:
+                pop_snp_search_sql = 'SELECT SNP_id FROM snptable WHERE locus_name = %s'
+            else:
+                pop_snp_search_sql = 'SELECT SNP_id FROM snptable WHERE site_name = %s'
+            my_cursor.execute(pop_snp_search_sql, pop_snp_selected)
+            snp_ids = my_cursor.fetchall()
+            snp_ids = extract_first(snp_ids)
+            if bool(snp_ids) is False:
+                sg.popup_error("Whoops! That is not a known locus name. Try again!", keep_on_top=True)
+            else:
+                samp_snp = f'SELECT sample_uid FROM samplecoveragetable WHERE snp_uid IN ({", ".join("%s" for _ in snp_ids)})'
+                my_cursor.execute(samp_snp, snp_ids)
+                samples_retrieved = my_cursor.fetchall()
+                samples_retrieved = extract_first(samples_retrieved)
+                samp_pop = 'SELECT pop_uid FROM samplegrouptable WHERE sample_uid IN ({0})'. \
+                    format(', '.join('%s' for _ in samples_retrieved))
+                my_cursor.execute(samp_pop, samples_retrieved)
+                pops_retrieved = my_cursor.fetchall()
+                pops_retrieved = extract_first(pops_retrieved)
+                pops_retrieved = [*set(pops_retrieved)]
+                pop_names = 'SELECT Population from populationtable WHERE pop_uid IN ({0})'. \
+                    format(', '.join('%s' for _ in pops_retrieved))
+                my_cursor.execute(pop_names, pops_retrieved)
+                pops_list = my_cursor.fetchall()
+                pops_list = extract_first(pops_list)
+                pops_list.sort()
+                window['-PopSNPOutput-'].update(values=pops_list, visible=True)
+        except (NameError, IndexError) as err:
+            sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                           "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
     if event == '-Reg1Choice-':
         region_comparison('-Reg1Choice-', '-Pop1Choice-')
@@ -627,29 +621,34 @@ while True:
         region_comparison('-Reg15Choice-', '-Pop15Choice-')
 
     if event == '-FetchResults-':
-        number_of_comparisons = values['-CompSlider-']
-        number_of_comparisons = int(number_of_comparisons)
-        results_snps = []
-        for i in range(2, number_of_comparisons+1):
-            result_for_single = fetch_results(f'-Pop{i}Choice-')
-            results_snps.append(result_for_single)
-        snps_pop1 = fetch_results('-Pop1Choice-')
-        list_common_snps = set(snps_pop1).intersection(*[set(x) for x in results_snps])
         try:
-            list_common_snps = [(x,) for x in list_common_snps]
-            list_common_snps = extract_first(list_common_snps)
+            number_of_comparisons = values['-CompSlider-']
+            number_of_comparisons = int(number_of_comparisons)
+            results_snps = []
+            for i in range(2, number_of_comparisons+1):
+                result_for_single = fetch_results(f'-Pop{i}Choice-')
+                results_snps.append(result_for_single)
+            snps_pop1 = fetch_results('-Pop1Choice-')
+            list_common_snps = set(snps_pop1).intersection(*[set(x) for x in results_snps])
+            try:
+                list_common_snps = [(x,) for x in list_common_snps]
+                list_common_snps = extract_first(list_common_snps)
 
-            sql_for_common = 'SELECT site_name, locus_name FROM snptable WHERE ' \
-                             f'SNP_id IN ({", ".join("%s" for _ in list_common_snps)})'
-            my_cursor.execute(sql_for_common, list_common_snps)
-            locuses_and_sites = my_cursor.fetchall()
-            locuses_and_sites.sort()
-            window['-SNPCommonOutput-'].update(values=locuses_and_sites)
-        except mysql.connector.errors.ProgrammingError:
-            sg.popup_ok("There are no common SNPs! Try a different selection of populations.", keep_on_top=True)
-        except NameError as err:
+                sql_for_common = 'SELECT site_name, locus_name FROM snptable WHERE ' \
+                                 f'SNP_id IN ({", ".join("%s" for _ in list_common_snps)})'
+                my_cursor.execute(sql_for_common, list_common_snps)
+                locuses_and_sites = my_cursor.fetchall()
+                locuses_and_sites.sort()
+                window['-SNPCommonOutput-'].update(values=locuses_and_sites)
+            except mysql.connector.errors.ProgrammingError:
+                sg.popup_ok("There are no common SNPs! Try a different selection of populations.", keep_on_top=True)
+            except (NameError, IndexError) as err:
+                sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
+                               "aagans@bowdoin.edu".format(err), keep_on_top=True)
+        except (NameError, IndexError) as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
+
     if event == '-UpdateNumberComparison-':
         number_of_comparisons = values['-CompSlider-']
         number_of_comparisons = int(number_of_comparisons)
@@ -663,7 +662,7 @@ while True:
         try:
             selected_value = locuses_and_sites[event[2][0]][event[2][1]]
             pyperclip.copy(selected_value)
-        except NameError:
+        except (NameError, IndexError):
             error = 1
 
 window.close()
