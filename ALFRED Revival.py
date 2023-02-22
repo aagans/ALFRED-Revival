@@ -52,6 +52,7 @@ def drop_down_search(search_text, full_list):
     updated_list = [x for x in full_list if x.startswith(search_text)]
     return updated_list
 
+
 def fetch_results(which_pop):
     selected_pop_1 = values[which_pop]
 
@@ -96,6 +97,8 @@ def region_comparison(region_submit, update_box):
     except (NameError, IndexError) as err:
         sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                        "aagans@bowdoin.edu".format(err), keep_on_top=True)
+
+
 # endregion
 
 
@@ -146,49 +149,76 @@ choice_selection_frame = [[sg.Text('Geographic Region:'),
                                     'Select From List', key='-LocusSelect-', enable_events=True)],
                           [sg.Button('Retrieve Frequency Data', key='-RequestTable-')]
                           ]
-search_pop_from_snp_frame = [[sg.Text('Type the name of a locus or SNPs to see what populations have been sampled for it!')],
-                             [sg.Input(key='-SNPTypeField-'), sg.Button(button_text='Find Populations',
-                                                                        key='-PopSearchButton-'),
-                              sg.Checkbox("Use SNP instead of locus", key = '-UseSNP-', enable_events = True)],
-                             [sg.Listbox(["Populations will be found here!"], select_mode='LISTBOX_SELECT_MODE_EXTENDED',
-                                         key='-PopSNPOutput-', visible=False, expand_y=True, expand_x=True,
-                                         enable_events=True)]]
+search_pop_from_snp_frame = [
+    [sg.Text('Type the name of a locus or SNPs to see what populations have been sampled for it!')],
+    [sg.Input(key='-SNPTypeField-'), sg.Button(button_text='Find Populations',
+                                               key='-PopSearchButton-'),
+     sg.Checkbox("Use SNP instead of locus", key='-UseSNP-', enable_events=True)],
+    [sg.Listbox(["Populations will be found here!"], select_mode='LISTBOX_SELECT_MODE_EXTENDED',
+                key='-PopSNPOutput-', visible=False, expand_y=True, expand_x=True,
+                enable_events=True)]]
 
-comparison_frame = [[sg.Slider(range = (2,15), default_value = 1, resolution = 1,
-                               orientation = 'h', key = '-CompSlider-'),
+comparison_frame = [[sg.Slider(range=(2, 15), default_value=1, resolution=1,
+                               orientation='h', key='-CompSlider-'),
                      sg.Button("Select Number of Populations to Compare", key='-UpdateNumberComparison-')],
                     [sg.Text('Choose Multiple Regions')],
                     [sg.Combo(['Connect to Database for Options!'], key='-Reg1Choice-', enable_events=True),
                      sg.Combo(['Connect to Database for Options!'], key='-Reg2Choice-', enable_events=True),
-                     sg.Combo(['Connect to Database for Options!'], key='-Reg3Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Reg4Choice-', enable_events=True, visible=False)],
-                     [sg.Combo(['Connect to Database for Options!'], key='-Reg5Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Reg6Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Reg7Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Reg8Choice-', enable_events=True, visible=False)],
-                     [sg.Combo(['Connect to Database for Options!'], key='-Reg9Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Reg10Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Reg11Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Reg12Choice-', enable_events=True, visible=False)],
-                     [sg.Combo(['Connect to Database for Options!'], key='-Reg13Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Reg14Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Reg15Choice-', enable_events=True, visible=False)],
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg3Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg4Choice-', enable_events=True,
+                              visible=False)],
+                    [sg.Combo(['Connect to Database for Options!'], key='-Reg5Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg6Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg7Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg8Choice-', enable_events=True,
+                              visible=False)],
+                    [sg.Combo(['Connect to Database for Options!'], key='-Reg9Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg10Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg11Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg12Choice-', enable_events=True,
+                              visible=False)],
+                    [sg.Combo(['Connect to Database for Options!'], key='-Reg13Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg14Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Reg15Choice-', enable_events=True,
+                              visible=False)],
                     [sg.Text('Choose Two Populations')],
                     [sg.Combo(['Connect to Database for Options!'], key='-Pop1Choice-', enable_events=True),
                      sg.Combo(['Connect to Database for Options!'], key='-Pop2Choice-', enable_events=True),
-                     sg.Combo(['Connect to Database for Options!'], key='-Pop3Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Pop4Choice-', enable_events=True, visible=False)],
-                     [sg.Combo(['Connect to Database for Options!'], key='-Pop5Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Pop6Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Pop7Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Pop8Choice-', enable_events=True, visible=False)],
-                     [sg.Combo(['Connect to Database for Options!'], key='-Pop9Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Pop10Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Pop11Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Pop12Choice-', enable_events=True, visible=False)],
-                     [sg.Combo(['Connect to Database for Options!'], key='-Pop13Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Pop14Choice-', enable_events=True, visible=False),
-                     sg.Combo(['Connect to Database for Options!'], key='-Pop15Choice-', enable_events=True, visible=False)],
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop3Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop4Choice-', enable_events=True,
+                              visible=False)],
+                    [sg.Combo(['Connect to Database for Options!'], key='-Pop5Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop6Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop7Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop8Choice-', enable_events=True,
+                              visible=False)],
+                    [sg.Combo(['Connect to Database for Options!'], key='-Pop9Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop10Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop11Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop12Choice-', enable_events=True,
+                              visible=False)],
+                    [sg.Combo(['Connect to Database for Options!'], key='-Pop13Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop14Choice-', enable_events=True,
+                              visible=False),
+                     sg.Combo(['Connect to Database for Options!'], key='-Pop15Choice-', enable_events=True,
+                              visible=False)],
                     [sg.Table(values=[['SNP', 'Locus']], headings=['SNP Name', 'Locus Name'], expand_y=True,
                               expand_x=True, key='-SNPCommonOutput-', alternating_row_color='white',
                               auto_size_columns=True, enable_click_events=True)],
@@ -201,11 +231,11 @@ settings_frame = [[sg.Text('Database IP:'), sg.Input(default_text=None, key='-IP
                   ]
 
 sample_info_frame = [[sg.Text("Type a Sample ID")],
-                      [sg.Input(key='-SampleIDField-'), sg.Button(button_text='Find Sample Info',
+                     [sg.Input(key='-SampleIDField-'), sg.Button(button_text='Find Sample Info',
                                                                  key='-SampleIDButton-')],
                      [sg.Multiline("Sample Descriptions will be found here!",
-                                 key='-SampleDescOutput-', visible=False, expand_y=True, expand_x=True,
-                                 enable_events=True)]
+                                   key='-SampleDescOutput-', visible=False, expand_y=True, expand_x=True,
+                                   enable_events=True)]
                      ]
 
 tab_1_layout = [[sg.Frame('Query Options', choice_selection_frame, expand_x=True)],
@@ -213,7 +243,7 @@ tab_1_layout = [[sg.Frame('Query Options', choice_selection_frame, expand_x=True
                           expand_x=True, expand_y=True)]]
 tab_2_layout = [[sg.Frame('Population Comparison Options', comparison_frame, expand_x=True, expand_y=True)]]
 tab_3_layout = [[sg.Frame('Settings Options', settings_frame, expand_x=True, expand_y=True)]]
-tab_4_layout = [[sg.Frame('Sample Information', sample_info_frame, expand_x=True, expand_y=True )]]
+tab_4_layout = [[sg.Frame('Sample Information', sample_info_frame, expand_x=True, expand_y=True)]]
 
 left_column_layout = [[sg.Frame('Database Connection', database_connection_frame, expand_x=True)],
                       [sg.TabGroup([[sg.Tab('Query Selection', tab_1_layout),
@@ -290,7 +320,7 @@ while True:
             dup_list_region.sort()
             sort_region = dup_list_region
             window['-RegionSelect-'].update(values=sort_region)
-            for i in range(1,16):
+            for i in range(1, 16):
                 window[f'-Reg{i}Choice-'].update(values=sort_region)
             window['-IPInput-'].update(visible=False)
             window['-UserInput-'].update(visible=False)
@@ -542,16 +572,16 @@ while True:
             sample_descs_str = extract_first(sample_desc_str)
             sample_descs_str = sample_descs_str[0]
             space_indexes = [i for i in range(len(sample_descs_str)) if sample_descs_str.startswith(" ", i)]
-            space_indexes = [space_indexes[i] for i in range(0,len(space_indexes),14)]
+            space_indexes = [space_indexes[i] for i in range(0, len(space_indexes), 14)]
             space_indexes.pop(0)
             for i in space_indexes:
-                sample_descs_str = sample_descs_str[:i] + "\n" + sample_descs_str[(i+1):]
+                sample_descs_str = sample_descs_str[:i] + "\n" + sample_descs_str[(i + 1):]
             print(sample_descs_str)
             window['-SampleDescOutput-'].update(value=sample_descs_str, visible=True)
         except (NameError, IndexError) as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
-        
+
     if event == '-PopSearchButton-':
         try:
             use_locus = window['-UseSNP-'].get()
@@ -624,7 +654,7 @@ while True:
             number_of_comparisons = values['-CompSlider-']
             number_of_comparisons = int(number_of_comparisons)
             results_snps = []
-            for i in range(2, number_of_comparisons+1):
+            for i in range(2, number_of_comparisons + 1):
                 result_for_single = fetch_results(f'-Pop{i}Choice-')
                 results_snps.append(result_for_single)
             snps_pop1 = fetch_results('-Pop1Choice-')
@@ -651,10 +681,10 @@ while True:
     if event == '-UpdateNumberComparison-':
         number_of_comparisons = values['-CompSlider-']
         number_of_comparisons = int(number_of_comparisons)
-        for i in range(2,number_of_comparisons+1):
-            window[f'-Reg{i}Choice-'].update(visible = True)
-            window[f'-Pop{i}Choice-'].update(visible = True)
-        for i in range(number_of_comparisons+1, 16):
+        for i in range(2, number_of_comparisons + 1):
+            window[f'-Reg{i}Choice-'].update(visible=True)
+            window[f'-Pop{i}Choice-'].update(visible=True)
+        for i in range(number_of_comparisons + 1, 16):
             window[f'-Reg{i}Choice-'].update(visible=False)
             window[f'-Pop{i}Choice-'].update(visible=False)
     if '+CLICKED+' in event:
