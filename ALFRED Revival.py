@@ -1,5 +1,4 @@
 # region Imports of dependencies
-import csv
 import json
 import pickle
 
