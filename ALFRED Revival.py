@@ -427,10 +427,10 @@ while True:
             table_name = table_name[0][0].lower()
 
             create_table_sql = f'SELECT * FROM {table_name} WHERE SNPCol = %s AND SampCol ' \
-                               f'IN ({", ".join("%s" for val in dup_sample_uid)})'
+                               f'IN ({", ".join("%s" for val in listed_sample_uid)})'
 
             args_table_list = [locus_uid_requested[0]]
-            args_table_list.extend(dup_sample_uid)
+            args_table_list.extend(listed_sample_uid)
 
             my_cursor.execute(create_table_sql, args_table_list)
             table_column_names = my_cursor.column_names
@@ -496,9 +496,9 @@ while True:
                     insert_snp = locus_uid_requested[0]
                     insert_table = table_name
                     auto_fix_data = 'SELECT sample_uid FROM samplecoveragetable WHERE snp_uid = %s ' \
-                                    'AND sample_uid IN ({0})'.format(', '.join('%s' for _ in dup_sample_uid))
+                                    'AND sample_uid IN ({0})'.format(', '.join('%s' for _ in listed_sample_uid))
                     auto_fix_list = [insert_snp]
-                    auto_fix_list.extend(dup_sample_uid)
+                    auto_fix_list.extend(listed_sample_uid)
                     my_cursor.execute(auto_fix_data, auto_fix_list)
                     sample_uid_auto_fix = my_cursor.fetchall()
                     insert_sample = sample_uid_auto_fix[0][0]
