@@ -311,7 +311,8 @@ while True:
                 user=connect_var["user"],
                 password=connect_var["password"],
                 database='alfred',
-                connection_timeout=3
+                connection_timeout=3,
+                use_pure=True
             )
             my_cursor = alfred_db.cursor()
             my_cursor.execute('SELECT geo_region FROM populationtable')
