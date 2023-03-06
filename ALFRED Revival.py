@@ -121,7 +121,7 @@ sg.theme('GreenTan')
 
 # region GUI frames/layout section
 database_connection_frame = [
-    [sg.Text('Connection Status:'), sg.Image('noconnect.png', subsample=40, key='-StatusImg-')],
+    [sg.Text('Connection Status:'), sg.Image('noconnect.png', key='-StatusImg-')],
     [sg.Button("Connect", key="-DataConnect-"), sg.Button('Disconnect', key='-DataDisconnect-')]
 ]
 
@@ -259,6 +259,21 @@ layout = [[sg.Push(), sg.Text('Welcome to the ALFRED Revival Interface. Please m
           [sg.Button('Exit'), sg.Button('Settings'), sg.Button('About')]]
 
 window = sg.Window('ALFRED Revival Interface', layout, resizable=True, icon=png)
+
+region_select_dict = {'-Reg1Choice-': '-Pop1Choice-',
+                      '-Reg2Choice-': '-Pop2Choice-',
+                      '-Reg3Choice-': '-Pop3Choice-',
+                      '-Reg4Choice-': '-Pop4Choice-',
+                      '-Reg5Choice-': '-Pop5Choice-',
+                      '-Reg6Choice-': '-Pop6Choice-',
+                      '-Reg7Choice-': '-Pop7Choice-',
+                      '-Reg8Choice-': '-Pop8Choice-',
+                      '-Reg10Choice-': '-Pop10Choice-',
+                      '-Reg11Choice-': '-Pop11Choice-',
+                      '-Reg12Choice-': '-Pop12Choice-',
+                      '-Reg13Choice-': '-Pop13Choice-',
+                      '-Reg14Choice-': '-Pop14Choice-',
+                      '-Reg15Choice-': '-Pop15Choice-'}
 # endregion
 
 # region GUI block
@@ -333,7 +348,7 @@ while True:
                 sg.popup_ok("A newer version of this interface is available. Please update as soon as possible!")
 
             if alfred_db.is_connected():
-                window['-StatusImg-'].update("connected.png", subsample=40)
+                window['-StatusImg-'].update("connected.png")
         except Error as err:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
@@ -344,7 +359,7 @@ while True:
     if event == '-DataDisconnect-':
         try:
             alfred_db.close()
-            window['-StatusImg-'].update("noconnect.png", subsample=40)
+            window['-StatusImg-'].update("noconnect.png")
             window['-IPInput-'].update(visible=True)
             window['-UserInput-'].update(visible=True)
             window['-PassInput-'].update(visible=True)
@@ -563,6 +578,7 @@ while True:
         selected_pop_str = window['-PopSNPOutput-'].get()
         selected_pop_str = str(selected_pop_str[0])
         pyperclip.copy(selected_pop_str)
+
     if event == '-SampleIDButton-':
         try:
             sample_id_value = values['-SampleIDField-']
@@ -618,36 +634,10 @@ while True:
             sg.popup_error("Something went wrong: {} Please contact your system administrator for assistance at "
                            "aagans@bowdoin.edu".format(err), keep_on_top=True)
 
-    if event == '-Reg1Choice-':
-        region_comparison('-Reg1Choice-', '-Pop1Choice-')
-    if event == '-Reg2Choice-':
-        region_comparison('-Reg2Choice-', '-Pop2Choice-')
-    if event == '-Reg3Choice-':
-        region_comparison('-Reg3Choice-', '-Pop3Choice-')
-    if event == '-Reg4Choice-':
-        region_comparison('-Reg4Choice-', '-Pop4Choice-')
-    if event == '-Reg5Choice-':
-        region_comparison('-Reg5Choice-', '-Pop5Choice-')
-    if event == '-Reg6Choice-':
-        region_comparison('-Reg6Choice-', '-Pop6Choice-')
-    if event == '-Reg7Choice-':
-        region_comparison('-Reg7Choice-', '-Pop7Choice-')
-    if event == '-Reg8Choice-':
-        region_comparison('-Reg8Choice-', '-Pop8Choice-')
-    if event == '-Reg9Choice-':
-        region_comparison('-Reg9Choice-', '-Pop9Choice-')
-    if event == '-Reg10Choice-':
-        region_comparison('-Reg10Choice-', '-Pop10Choice-')
-    if event == '-Reg11Choice-':
-        region_comparison('-Reg11Choice-', '-Pop11Choice-')
-    if event == '-Reg12Choice-':
-        region_comparison('-Reg12Choice-', '-Pop12Choice-')
-    if event == '-Reg13Choice-':
-        region_comparison('-Reg13Choice-', '-Pop13Choice-')
-    if event == '-Reg14Choice-':
-        region_comparison('-Reg14Choice-', '-Pop14Choice-')
-    if event == '-Reg15Choice-':
-        region_comparison('-Reg15Choice-', '-Pop15Choice-')
+    if event in ['-Reg1Choice-', '-Reg2Choice-', '-Reg3Choice-', '-Reg4Choice-', '-Reg5Choice-', '-Reg6Choice-',
+                 '-Reg7Choice-', '-Reg8Choice-', '-Reg9Choice-', '-Reg10Choice-', '-Reg11Choice-', '-Reg12Choice-',
+                 '-Reg13Choice-', '-Reg14Choice-', '-Reg15Choice-']:
+        region_comparison(event, region_select_dict[event])
 
     if event == '-FetchResults-':
         try:
