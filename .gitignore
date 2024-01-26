@@ -1,8 +1,0 @@
-
-*.iml
-.DS_Store
-.idea/.DS_Store
-*.xml
-/.idea/*
-/.idea/
-/venv/
